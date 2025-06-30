@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบเช็คชื่อนักเรียน - โรงเรียนอุบลรัตน์พิทยาคม</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Noto Sans Thai -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- SweetAlert2 for notifications -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Chart.js for statistics charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- html2canvas for downloading elements as PNG -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Noto Sans Thai', sans-serif;
+            background-color: #f0f4f8;
+        }
+        .nav-link {
+            transition: all 0.3s ease;
+        }
+        .nav-link.active {
+            background-color: #1d4ed8;
+            color: white;
+            border-bottom-width: 4px;
+            border-color: #facc15;
+        }
+        .nav-link:not(.active):hover {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .status-btn-group button {
+            transition: all 0.2s ease;
+        }
+        .status-btn-group button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .table-row-present { background-color: #dcfce7 !important; } /* Green */
+        .table-row-activity { background-color: #cffafe !important; } /* Cyan */
+        .table-row-absent { background-color: #fee2e2 !important; } /* Red */
+        .table-row-leave { background-color: #fef08a !important; } /* Yellow */
+        .table-row-late { background-color: #ffedd5 !important; } /* Orange */
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div id="app" class="container mx-auto p-4 md:p-6 lg:p-8">
+
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-blue-800">ระบบเช็คชื่อนักเรียน ชั้นมัธยมศึกษาปีที่ 1 ห้อง 1</h1>
+            <p class="text-lg md:text-xl text-blue-600 mt-2">โรงเรียนอุบลรัตน์พิทยาคม สังกัดสำนักงานเขตพื้นที่การศึกษามัธยมศึกษาขอนแก่น</p>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="bg-blue-700 rounded-lg shadow-md mb-8">
+            <ul class="flex flex-nowrap justify-center p-2 overflow-x-auto">
+                <li><a href="#" class="nav-link active text-white font-semibold py-2 px-2 rounded-md m-1 flex items-center gap-1" onclick="switchView('attendance')"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" /><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3z" clip-rule="evenodd" /></svg><span class="whitespace-nowrap">หน้าเช็คชื่อ</span></a></li>
+                <li><a href="#" class="nav-link text-white font-semibold py-2 px-2 rounded-md m-1 flex items-center gap-1" onclick="switchView('statistics')"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" /></svg><span class="whitespace-nowrap">สถิติการมาเรียน</span></a></li>
+                <li><a href="#" class="nav-link text-white font-semibold py-2 px-2 rounded-md m-1 flex items-center gap-1" onclick="switchView('summary')"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V4a2 2 0 00-2-2H6zm1 2a1 1 0 000 2h6a1 1 0 100-2H7zM6 7a1 1 0 011-1h2a1 1 0 110 2H7a1 1 0 01-1-1zm0 4a1 1 0 011-1h2a1 1 0 110 2H7a1 1 0 01-1-1zm4.586 2.586a1 1 0 011.414 0l.707.707a1 1 0 01-1.414 1.414l-.707-.707a1 1 0 010-1.414zM10 15a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" /></svg><span class="whitespace-nowrap">สรุปคะแนน</span></a></li>
+                <li><a href="#" class="nav-link text-white font-semibold py-2 px-2 rounded-md m-1 flex items-center gap-1" onclick="switchView('good-deeds')"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg><span class="whitespace-nowrap">บันทึกความดี</span></a></li>
+                <li><a href="#" class="nav-link text-white font-semibold py-2 px-2 rounded-md m-1 flex items-center gap-1" onclick="switchView('record-log')"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" /></svg><span class="whitespace-nowrap">ผลการบันทึก</span></a></li>
+                <li><a href="#" class="nav-link text-white font-semibold py-2 px-2 rounded-md m-1 flex items-center gap-1" onclick="switchView('manage-students')"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" /></svg><span class="whitespace-nowrap">จัดการข้อมูลนักเรียน</span></a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main>
+            <!-- View: Attendance Check -->
+            <div id="view-attendance" class="view-content bg-white p-6 rounded-lg shadow-lg">
+                <div class="flex flex-wrap justify-between items-center mb-6 gap-4">
+                    <h2 class="text-2xl font-bold text-blue-700">เช็คชื่อประจำวัน</h2>
+                    <div class="flex flex-wrap items-center gap-4">
+                         <input type="date" id="attendance-date" class="p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+                         <select id="teacher-selector" class="p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+                             <option value="">-- เลือกผู้บันทึก --</option>
+                             <option>นางสาวจันทร์เพ็ญ ไชยะเวช</option>
+                             <option>นางเนตรนภา คลังกลาง</option>
+                         </select>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white">
+                        <thead class="bg-blue-800 text-white">
+                            <tr>
+                                <th class="py-3 px-4 text-left">เลขที่</th>
+                                <th class="py-3 px-4 text-left">เลขประจำตัว</th>
+                                <th class="py-3 px-4 text-left">ชื่อ – สกุล</th>
+                                <th class="py-3 px-12 text-center">สถานะ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="student-list-attendance">
+                            <!-- Student rows will be injected here by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                 <div class="mt-6 text-right">
+                    <button onclick="saveAttendance()" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition duration-300">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2" viewBox="0 0 20 20" fill="currentColor"><path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6a1 1 0 10-2 0v5.586l-1.293-1.293zM5 4a1 1 0 011-1h8a1 1 0 011 1v4a1 1 0 01-1 1H6a1 1 0 01-1-1V4z"/></svg>
+                        บันทึกข้อมูล
+                    </button>
+                </div>
+            </div>
+
+            <!-- View: Statistics -->
+            <div id="view-statistics" class="view-content bg-white p-6 rounded-lg shadow-lg" style="display:none;">
+                <div class="flex flex-wrap justify-between items-center mb-6 gap-4">
+                    <h2 class="text-2xl font-bold text-blue-700">สถิติการมาเรียน</h2>
+                    <input type="date" id="stats-date" class="p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div id="stats-summary" class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6 text-center">
+                    <!-- Summary cards will be injected here -->
+                </div>
+                <div id="stats-chart-container" class="bg-gray-50 p-4 rounded-lg">
+                    <canvas id="attendance-chart"></canvas>
+                </div>
+                <div class="mt-6 text-right">
+                    <button onclick="downloadPNG('stats-chart-container', 'attendance-stats.png')" class="bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 transition duration-300">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                        ดาวน์โหลดเป็น PNG
+                    </button>
+                </div>
+            </div>
+
+            <!-- View: Score Summary -->
+            <div id="view-summary" class="view-content bg-white p-6 rounded-lg shadow-lg" style="display:none;">
+                 <div class="flex flex-wrap justify-between items-center mb-6 gap-4">
+                    <h2 class="text-2xl font-bold text-blue-700">สรุปคะแนนการมาเรียน</h2>
+                     <button onclick="downloadPNG('summary-table-container', 'score-summary.png')" class="bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 transition duration-300">
+                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                        ดาวน์โหลดเป็น PNG
+                    </button>
+                </div>
+                <div id="summary-table-container" class="overflow-x-auto">
+                    <table class="min-w-full bg-white text-sm">
+                        <thead class="bg-blue-800 text-white">
+                            <tr>
+                                <th class="py-2 px-2 text-center">เลขที่</th>
+                                <th class="py-2 px-3 text-left">ชื่อ-สกุล</th>
+                                <th class="py-2 px-2 text-center">มา</th>
+                                <th class="py-2 px-2 text-center">กิจกรรม</th>
+                                <th class="py-2 px-2 text-center">ลา</th>
+                                <th class="py-2 px-2 text-center">มาสาย</th>
+                                <th class="py-2 px-2 text-center">ขาด</th>
+                                <th class="py-2 px-2 text-center">คะแนนความดี</th>
+                                <th class="py-2 px-2 text-center">คะแนนพฤติกรรม</th>
+                                <th class="py-2 px-2 text-center">ผลประเมิน</th>
+                            </tr>
+                        </thead>
+                        <tbody id="score-summary-table">
+                            <!-- Summary rows will be injected here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- View: Good Deeds -->
+            <div id="view-good-deeds" class="view-content bg-white p-6 rounded-lg shadow-lg" style="display:none;">
+                 <h2 class="text-2xl font-bold text-blue-700 mb-6">บันทึกความดี</h2>
+                 <div class="flex flex-wrap items-end gap-4">
+                     <div class="flex-grow">
+                        <label for="good-deed-date" class="block text-sm font-medium text-gray-700 mb-1">วันที่</label>
+                        <input type="date" id="good-deed-date" class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+                     </div>
+                     <div class="flex-grow">
+                        <label for="good-deed-student" class="block text-sm font-medium text-gray-700 mb-1">เลือกนักเรียน</label>
+                        <select id="good-deed-student" class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+                            <!-- Student options will be injected here -->
+                        </select>
+                     </div>
+                      <div class="flex-grow">
+                        <label for="good-deed-description" class="block text-sm font-medium text-gray-700 mb-1">รายละเอียดความดี</label>
+                        <input type="text" id="good-deed-description" placeholder="เช่น ช่วยเหลือครู, ทำความสะอาด" class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+                     </div>
+                     <div>
+                        <button onclick="recordGoodDeed()" class="bg-yellow-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-yellow-600 transition duration-300 w-full">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clip-rule="evenodd" /></svg>
+                            เพิ่ม 5 คะแนน
+                        </button>
+                     </div>
+                 </div>
+            </div>
+
+            <!-- View: Record Log -->
+            <div id="view-record-log" class="view-content bg-white p-6 rounded-lg shadow-lg" style="display:none;">
+                <div class="flex flex-wrap justify-between items-center mb-6 gap-4">
+                     <h2 class="text-2xl font-bold text-blue-700">ผลการบันทึกข้อมูลรายเดือน</h2>
+                     <div class="flex items-center gap-2">
+                        <input type="month" id="calendar-month" class="p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+                        <button onclick="downloadPNG('calendar-container', 'record-log.png')" class="bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 transition duration-300">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                            ดาวน์โหลดเป็น PNG
+                        </button>
+                     </div>
+                </div>
+                <div id="calendar-container" class="bg-gray-50 p-4 rounded-lg">
+                    <div class="grid grid-cols-7 gap-2 text-center font-bold text-blue-800">
+                        <div>อาทิตย์</div>
+                        <div>จันทร์</div>
+                        <div>อังคาร</div>
+                        <div>พุธ</div>
+                        <div>พฤหัสบดี</div>
+                        <div>ศุกร์</div>
+                        <div>เสาร์</div>
+                    </div>
+                    <div id="calendar-grid" class="grid grid-cols-7 gap-2 mt-2">
+                        <!-- Calendar days will be injected here -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- View: Manage Students -->
+            <div id="view-manage-students" class="view-content bg-white p-6 rounded-lg shadow-lg" style="display:none;">
+                 <h2 class="text-2xl font-bold text-blue-700 mb-6">จัดการข้อมูลนักเรียน</h2>
+                 <!-- Add Student Form -->
+                <div class="bg-blue-50 p-4 rounded-lg mb-6">
+                    <h3 class="font-bold text-lg mb-2 text-blue-800">เพิ่มนักเรียนใหม่</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <input type="number" id="new-student-no" placeholder="เลขที่" class="p-2 border rounded">
+                        <input type="number" id="new-student-id" placeholder="เลขประจำตัว" class="p-2 border rounded">
+                        <input type="text" id="new-student-name" placeholder="ชื่อ-สกุล" class="p-2 border rounded md:col-span-2">
+                        <button onclick="addStudent()" class="bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition md:col-span-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>
+                            เพิ่มนักเรียน
+                        </button>
+                    </div>
+                </div>
+
+                 <!-- Student List for Management -->
+                 <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white">
+                        <thead class="bg-blue-800 text-white">
+                            <tr>
+                                <th class="py-3 px-4 text-left">เลขที่</th>
+                                <th class="py-3 px-4 text-left">เลขประจำตัว</th>
+                                <th class="py-3 px-4 text-left">ชื่อ – สกุล</th>
+                                <th class="py-3 px-4 text-center">จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="student-list-manage">
+                            <!-- Management rows will be injected here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </main>
+        
+        <!-- Footer -->
+        <footer class="text-center mt-12 text-gray-500 text-sm">
+            <p>© 2025 โรงเรียนอุบลรัตน์พิทยาคม. สงวนลิขสิทธิ์.</p>
+        </footer>
+    </div>
+
+<script>
+// --- CONFIGURATION ---
+const SPREADSHEET_ID = "1RsXptJfzkmO9nFnnnEFVpWikTe7PQhseK6yrwF-QtiQ";
+
+// !!! --- ATTENTION --- !!!
+// PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL HERE
+// The URL you get after deploying the script must be pasted below.
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxwn4plPXcNO0f76PPuT7X5stz6BP2oIfL-rH5qm27NTyFQrR1g7ms5_b9cftnAZKL7_Q/exec"; 
+
+// --- INITIAL DATA ---
+let students = [
+    { no: 1, id: 16989, name: "เด็กชาย จักรภัทร แก้วมาตร", status: null },
+    { no: 2, id: 16990, name: "เด็กชาย ชัชพงศ์ รายา", status: null },
+    { no: 3, id: 16991, name: "เด็กชาย ณัฐนนท์ ซุนซา", status: null },
+    { no: 4, id: 16992, name: "เด็กชาย ทยากร ผดุงโภคสูริย์", status: null },
+    { no: 5, id: 16993, name: "เด็กชาย ธีธายา ทองโคตร", status: null },
+    { no: 6, id: 16994, name: "เด็กชาย ปฐพิทักษ์ อินทองคำ", status: null },
+    { no: 7, id: 16995, name: "เด็กชาย ปีรติ ธิอูป", status: null },
+    { no: 8, id: 16996, name: "เด็กชาย พฤกษ์ เจนประเสริฐ", status: null },
+    { no: 9, id: 16997, name: "เด็กชาย พาทิศ บุญเลี้ยง", status: null },
+    { no: 10, id: 16998, name: "เด็กชาย มังกร ศิลาลักษณ์", status: null },
+    { no: 11, id: 16999, name: "เด็กชาย รพินทร์ ถุงน้ำคำ", status: null },
+    { no: 12, id: 17000, name: "เด็กชาย รัชชานนท์ ฆ้องคำ", status: null },
+    { no: 13, id: 17001, name: "เด็กชาย วรินทร ชุมอภัย", status: null },
+    { no: 14, id: 17002, name: "เด็กชาย วิรดัย สีชมภู", status: null },
+    { no: 15, id: 17003, name: "เด็กชาย ศิวัช อินทะวัน", status: null },
+    { no: 16, id: 17004, name: "เด็กชาย อันดา พันธุระ", status: null },
+    { no: 17, id: 17005, name: "เด็กหญิง กมลลักษณ์ แก้วเนตร", status: null },
+    { no: 18, id: 17006, name: "เด็กหญิง กัญญณัท รุ่งเรือง", status: null },
+    { no: 19, id: 17007, name: "เด็กหญิง กัญญาภัทร สัตย์ซ้ำ", status: null },
+    { no: 20, id: 17008, name: "เด็กหญิง เกสรา วันละพงษ์", status: null },
+    { no: 21, id: 17009, name: "เด็กหญิง ขนิษฐา ฐานะ", status: null },
+    { no: 22, id: 17010, name: "เด็กหญิง จิรัชยา นาสมภักดิ์", status: null },
+    { no: 23, id: 17011, name: "เด็กหญิง จิราพัชร อ่อนศรี", status: null },
+    { no: 24, id: 17012, name: "เด็กหญิง ชนากาจนต์ บุพจันโท", status: null },
+    { no: 25, id: 17013, name: "เด็กหญิง ชยาภรณ์ ชัยแก้ว", status: null },
+    { no: 26, id: 17014, name: "เด็กหญิง ฑิตยา งามราชจักร์", status: null },
+    { no: 27, id: 17015, name: "เด็กหญิง ณปภัช สังข์วงษ์", status: null },
+    { no: 28, id: 17016, name: "เด็กหญิง ณัฏฐา โพธิ์ทอง", status: null },
+    { no: 29, id: 17017, name: "เด็กหญิง ธัญญรัตน์ แสนคำภา", status: null },
+    { no: 30, id: 17018, name: "เด็กหญิง นิตติยา แพงดาน", status: null },
+    { no: 31, id: 17019, name: "เด็กหญิง บัวชมพู อุทยานสุทธิ", status: null },
+    { no: 32, id: 17020, name: "เด็กหญิง ปิญากร สนเคห์", status: null },
+    { no: 33, id: 17021, name: "เด็กหญิง พิมพ์ชนก ฐานะ", status: null },
+    { no: 34, id: 17022, name: "เด็กหญิง ลลิตภัทร ชินแสง", status: null },
+    { no: 35, id: 17023, name: "เด็กหญิง วัชราภรณ์ สายเนตร", status: null },
+    { no: 36, id: 17024, name: "เด็กหญิง สุพัตรา มหามาตย์", status: null },
+    { no: 37, id: 17025, name: "เด็กหญิง อชิรญา เกษมสิริกัญญา", status: null },
+    { no: 38, id: 17026, name: "เด็กหญิง อภิญญา บุญสมัคร", status: null },
+    { no: 39, id: 17027, name: "เด็กหญิง อิสริน พานโคตร", status: null },
+    { no: 40, id: 17028, name: "เด็กหญิง อุญญาณี หาญระคร", status: null }
+];
+let attendanceRecords = {}; // { 'YYYY-MM-DD': { teacher: '...', records: {...} } }
+let goodDeedRecords = []; // [ {date, studentId, points, description} ]
+
+// --- UI & STATE MANAGEMENT ---
+let currentView = 'attendance';
+let attendanceChart;
+
+// Set default date to today
+function getTodayDateString() {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+// Switch between different views
+function switchView(viewName) {
+    document.querySelectorAll('.view-content').forEach(view => {
+        view.style.display = 'none';
+    });
+    document.getElementById(`view-${viewName}`).style.display = 'block';
+
+    document.querySelectorAll('.nav-link').forEach(link => {
+        link.classList.remove('active');
+    });
+    document.querySelector(`.nav-link[onclick="switchView('${viewName}')"]`).classList.add('active');
+    
+    currentView = viewName;
+    // Refresh data for the new view
+    updateUI();
+}
+
+// Set student attendance status
+function setStatus(studentId, status, buttonEl) {
+    const student = students.find(s => s.id === studentId);
+    if (student) {
+        student.status = status;
+        const row = document.getElementById(`student-row-${studentId}`);
+        // Reset row color
+        row.className = 'border-b hover:bg-gray-100 transition duration-200';
+        // Apply new color class based on status
+        const colorMap = {
+            'มา': 'table-row-present',
+            'กิจกรรม': 'table-row-activity',
+            'ขาด': 'table-row-absent',
+            'ลา': 'table-row-leave',
+            'มาสาย': 'table-row-late',
+        };
+        if (colorMap[status]) {
+            row.classList.add(colorMap[status]);
+        }
+    }
+}
+
+// --- RENDERING FUNCTIONS ---
+
+function renderStudentListAttendance() {
+    const list = document.getElementById('student-list-attendance');
+    list.innerHTML = '';
+    students.sort((a,b) => a.no - b.no).forEach(s => {
+        const row = document.createElement('tr');
+        row.id = `student-row-${s.id}`;
+        row.className = 'border-b hover:bg-gray-100 transition duration-200';
+        
+        row.innerHTML = `
+            <td class="py-3 px-4">${s.no}</td>
+            <td class="py-3 px-4">${s.id}</td>
+            <td class="py-3 px-4 font-medium">${s.name}</td>
+            <td class="py-2 px-4">
+                <div class="status-btn-group flex flex-nowrap justify-center gap-1">
+                    <button onclick="setStatus(${s.id}, 'มา', this)" class="bg-green-500 text-white text-xs font-bold py-2 rounded-lg flex items-center gap-1 w-20 justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
+                        <span>มา</span>
+                    </button>
+                    <button onclick="setStatus(${s.id}, 'กิจกรรม', this)" class="bg-cyan-500 text-white text-xs font-bold py-2 rounded-lg flex items-center gap-1 w-20 justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" /><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3z" clip-rule="evenodd" /></svg>
+                        <span>กิจกรรม</span>
+                    </button>
+                    <button onclick="setStatus(${s.id}, 'ขาด', this)" class="bg-red-500 text-white text-xs font-bold py-2 rounded-lg flex items-center gap-1 w-20 justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                        <span>ขาด</span>
+                    </button>
+                    <button onclick="setStatus(${s.id}, 'ลา', this)" class="bg-yellow-400 text-white text-xs font-bold py-2 rounded-lg flex items-center gap-1 w-20 justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" /></svg>
+                        <span>ลา</span>
+                    </button>
+                    <button onclick="setStatus(${s.id}, 'มาสาย', this)" class="bg-orange-400 text-white text-xs font-bold py-2 rounded-lg flex items-center gap-1 w-20 justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.414-1.415L11 9.586V6z" clip-rule="evenodd" /></svg>
+                        <span>มาสาย</span>
+                    </button>
+                </div>
+            </td>
+        `;
+        list.appendChild(row);
+    });
+}
+
+function renderStatistics() {
+    const date = document.getElementById('stats-date').value;
+    const recordsForDate = attendanceRecords[date];
+    const summaryEl = document.getElementById('stats-summary');
+    
+    if (!recordsForDate) {
+        summaryEl.innerHTML = `<p class="col-span-full text-center text-gray-500">ไม่พบข้อมูลสำหรับวันที่ ${date}</p>`;
+        if (attendanceChart) attendanceChart.destroy();
+        document.getElementById('attendance-chart').style.display = 'none';
+        return;
+    }
+    
+    const counts = { 'มา': 0, 'กิจกรรม': 0, 'ขาด': 0, 'ลา': 0, 'มาสาย': 0, 'ยังไม่เช็ค': 0 };
+    Object.values(recordsForDate.records).forEach(status => {
+        if(counts.hasOwnProperty(status)) {
+            counts[status]++;
+        }
+    });
+    
+    summaryEl.innerHTML = `
+        <div class="bg-green-100 p-3 rounded-lg"><div class="text-2xl font-bold text-green-700">${counts['มา']}</div><div class="text-sm">มา</div></div>
+        <div class="bg-cyan-100 p-3 rounded-lg"><div class="text-2xl font-bold text-cyan-700">${counts['กิจกรรม']}</div><div class="text-sm">กิจกรรม</div></div>
+        <div class="bg-red-100 p-3 rounded-lg"><div class="text-2xl font-bold text-red-700">${counts['ขาด']}</div><div class="text-sm">ขาด</div></div>
+        <div class="bg-yellow-100 p-3 rounded-lg"><div class="text-2xl font-bold text-yellow-700">${counts['ลา']}</div><div class="text-sm">ลา</div></div>
+        <div class="bg-orange-100 p-3 rounded-lg"><div class="text-2xl font-bold text-orange-700">${counts['มาสาย']}</div><div class="text-sm">มาสาย</div></div>
+    `;
+
+    const ctx = document.getElementById('attendance-chart').getContext('2d');
+    document.getElementById('attendance-chart').style.display = 'block';
+    if (attendanceChart) {
+        attendanceChart.destroy();
+    }
+    attendanceChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['มา', 'กิจกรรม', 'ขาด', 'ลา', 'มาสาย'],
+            datasets: [{
+                label: `สถิติการมาเรียนวันที่ ${date}`,
+                data: [counts['มา'], counts['กิจกรรม'], counts['ขาด'], counts['ลา'], counts['มาสาย']],
+                backgroundColor: ['#22c55e', '#06b6d4', '#ef4444', '#facc15', '#fb923c'],
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+        }
+    });
+}
+
+
+function renderScoreSummary() {
+    const tableBody = document.getElementById('score-summary-table');
+    tableBody.innerHTML = '';
+    
+    students.forEach(student => {
+        const counts = { 'มา': 0, 'กิจกรรม': 0, 'ขาด': 0, 'ลา': 0, 'มาสาย': 0 };
+        // Recalculate attendance from all records
+        for (const date in attendanceRecords) {
+            if (attendanceRecords[date] && attendanceRecords[date].records) {
+                const status = attendanceRecords[date].records[student.id];
+                if (status && counts.hasOwnProperty(status)) {
+                    counts[status]++;
+                }
+            }
+        }
+        
+        const goodDeedsPoints = (goodDeedRecords || [])
+            .filter(r => r.studentId == student.id)
+            .reduce((sum, record) => sum + (record.points || 0), 0);
+
+        let behaviorScore = 100;
+        behaviorScore -= (counts['ลา'] * 2.5);
+        behaviorScore -= (counts['มาสาย'] * 2.5);
+        behaviorScore -= (counts['ขาด'] * 5);
+
+        const finalScore = behaviorScore + goodDeedsPoints;
+        const evaluation = finalScore >= 60 ? 
+            '<span class="font-bold text-green-600">ผ่าน</span>' : 
+            '<span class="font-bold text-red-600">ไม่ผ่าน</span>';
+
+        const row = document.createElement('tr');
+        row.className = 'border-b text-center';
+        row.innerHTML = `
+            <td class="py-2 px-2">${student.no}</td>
+            <td class="py-2 px-3 text-left">${student.name}</td>
+            <td class="py-2 px-2">${counts['มา']}</td>
+            <td class="py-2 px-2">${counts['กิจกรรม']}</td>
+            <td class="py-2 px-2">${counts['ลา']}</td>
+            <td class="py-2 px-2">${counts['มาสาย']}</td>
+            <td class="py-2 px-2">${counts['ขาด']}</td>
+            <td class="py-2 px-2 text-blue-600 font-semibold">+${goodDeedsPoints}</td>
+            <td class="py-2 px-2 font-bold">${finalScore}</td>
+            <td class="py-2 px-2">${evaluation}</td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
+
+
+function renderGoodDeeds() {
+    const select = document.getElementById('good-deed-student');
+    select.innerHTML = '<option value="">-- เลือกนักเรียน --</option>';
+    students.sort((a,b) => a.no - b.no).forEach(s => {
+        const option = document.createElement('option');
+        option.value = s.id;
+        option.textContent = `${s.no}. ${s.name}`;
+        select.appendChild(option);
+    });
+}
+
+function renderRecordLog() {
+    const calendarGrid = document.getElementById('calendar-grid');
+    const monthInput = document.getElementById('calendar-month').value;
+    calendarGrid.innerHTML = '';
+
+    if (!monthInput) return;
+
+    const [year, month] = monthInput.split('-').map(Number);
+    const firstDay = new Date(year, month - 1, 1).getDay(); // 0=Sun, 1=Mon,...
+    const daysInMonth = new Date(year, month, 0).getDate();
+
+    // Create blank cells for days before the 1st of the month
+    for (let i = 0; i < firstDay; i++) {
+        calendarGrid.innerHTML += `<div class="border rounded-md p-2 bg-gray-100 h-24"></div>`;
+    }
+
+    // Create cells for each day of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const dayOfWeek = new Date(year, month-1, day).getDay();
+        const record = attendanceRecords[dateStr];
+
+        let content = '';
+        if (dayOfWeek === 0 || dayOfWeek === 6) { // Saturday or Sunday
+            content = `<div class="border rounded-md p-2 h-24 flex flex-col justify-between bg-gray-200">
+                <span class="font-bold">${day}</span>
+                <span class="text-xs text-gray-500 self-center">วันหยุด</span>
+            </div>`;
+        } else if (record) {
+            content = `<div class="border rounded-md p-2 h-24 flex flex-col justify-between bg-green-50 border-green-200">
+                <span class="font-bold">${day}</span>
+                <div class="text-xs text-left">
+                    <p class="truncate" title="${record.teacher || ''}">ผู้บันทึก: ${record.teacher || 'N/A'}</p>
+                    <p class="text-green-600 font-semibold">✔️ บันทึกเรียบร้อย</p>
+                </div>
+            </div>`;
+        } else {
+             content = `<div class="border rounded-md p-2 h-24 flex flex-col justify-between bg-red-50 border-red-200">
+                <span class="font-bold">${day}</span>
+                <p class="text-xs text-red-600 font-semibold self-center">❌ ยังไม่บันทึก</p>
+            </div>`;
+        }
+        calendarGrid.innerHTML += content;
+    }
+}
+
+
+function renderStudentManagementList() {
+    const list = document.getElementById('student-list-manage');
+    list.innerHTML = '';
+    students.sort((a, b) => a.no - b.no).forEach(s => {
+        const row = document.createElement('tr');
+        row.id = `manage-student-row-${s.id}`;
+        row.className = 'border-b';
+        row.innerHTML = `
+            <td class="py-3 px-4">${s.no}</td>
+            <td class="py-3 px-4">${s.id}</td>
+            <td class="py-3 px-4 font-medium">${s.name}</td>
+            <td class="py-2 px-4 text-center">
+                <button onclick="editStudent(${s.id})" class="bg-yellow-500 text-white p-2 rounded-md hover:bg-yellow-600 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg>
+                </button>
+                <button onclick="deleteStudent(${s.id})" class="bg-red-600 text-white p-2 rounded-md hover:bg-red-700 transition ml-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg>
+                </button>
+            </td>
+        `;
+        list.appendChild(row);
+    });
+}
+
+
+function updateUI() {
+    if (!students) students = [];
+    if (!attendanceRecords) attendanceRecords = {};
+    if (!goodDeedRecords) goodDeedRecords = [];
+
+    switch(currentView) {
+        case 'attendance':
+            renderStudentListAttendance();
+            break;
+        case 'statistics':
+            renderStatistics();
+            break;
+        case 'summary':
+            renderScoreSummary();
+            break;
+        case 'good-deeds':
+            renderGoodDeeds();
+            break;
+        case 'record-log':
+            renderRecordLog();
+            break;
+        case 'manage-students':
+            renderStudentManagementList();
+            break;
+    }
+}
+
+
+// --- DATA HANDLING & ACTIONS ---
+
+function saveAttendance() {
+    const date = document.getElementById('attendance-date').value;
+    const teacher = document.getElementById('teacher-selector').value;
+
+    if (!date) {
+        Swal.fire('ข้อผิดพลาด', 'กรุณาเลือกวันที่', 'error');
+        return;
+    }
+    if (!teacher) {
+        Swal.fire('ข้อผิดพลาด', 'กรุณาเลือกผู้บันทึก', 'error');
+        return;
+    }
+
+    const uncheckedStudents = students.filter(s => s.status === null);
+    if (uncheckedStudents.length > 0) {
+        Swal.fire('ข้อผิดพลาด', `ยังไม่ได้เช็คชื่อนักเรียน ${uncheckedStudents.length} คน`, 'warning');
+        return;
+    }
+
+    const dataToSave = {
+        teacher: teacher,
+        records: {}
+    };
+    students.forEach(s => {
+        dataToSave.records[s.id] = s.status;
+    });
+
+    const payload = {
+        action: 'saveAttendance',
+        date: date,
+        data: JSON.stringify(dataToSave)
+    };
+    sendDataToGoogleSheet(payload, () => {
+        attendanceRecords[date] = dataToSave; // Update local data on success
+        Swal.fire('สำเร็จ', 'บันทึกข้อมูลการเช็คชื่อเรียบร้อยแล้ว', 'success');
+        // Reset statuses for next time
+        students.forEach(s => s.status = null);
+        renderStudentListAttendance(); // rerender attendance page
+    });
+}
+
+function recordGoodDeed() {
+    const date = document.getElementById('good-deed-date').value;
+    const studentId = document.getElementById('good-deed-student').value;
+    const description = document.getElementById('good-deed-description').value.trim();
+    const student = students.find(s => s.id == studentId);
+
+    if (!date || !studentId || !description) {
+        Swal.fire('ข้อผิดพลาด', 'กรุณากรอกข้อมูลให้ครบถ้วน', 'error');
+        return;
+    }
+
+    const deed = {
+        date: date,
+        studentId: parseInt(studentId),
+        points: 5,
+        description: description,
+        studentName: student ? student.name : 'Unknown'
+    };
+    
+    const payload = {
+        action: 'recordGoodDeed',
+        data: JSON.stringify(deed)
+    };
+    sendDataToGoogleSheet(payload, () => {
+        goodDeedRecords.push(deed); // Update local data on success
+        Swal.fire('สำเร็จ', `บันทึกความดีให้ ${deed.studentName} สำเร็จ`, 'success');
+        document.getElementById('good-deed-description').value = '';
+        document.getElementById('good-deed-student').value = '';
+    });
+}
+
+function addStudent() {
+    const no = document.getElementById('new-student-no').value;
+    const id = document.getElementById('new-student-id').value;
+    const name = document.getElementById('new-student-name').value.trim();
+
+    if (!no || !id || !name) {
+        Swal.fire('ข้อผิดพลาด', 'กรุณากรอกข้อมูลนักเรียนให้ครบถ้วน', 'error');
+        return;
+    }
+
+    if (students.some(s => s.id == id || s.no == no)) {
+        Swal.fire('ข้อผิดพลาด', 'เลขที่ หรือ เลขประจำตัวนี้มีอยู่แล้วในระบบ', 'error');
+        return;
+    }
+    
+    const newStudent = {
+        no: parseInt(no),
+        id: parseInt(id),
+        name: name
+    };
+
+    const payload = {
+        action: 'addStudent',
+        data: JSON.stringify(newStudent)
+    };
+    sendDataToGoogleSheet(payload, () => {
+        students.push({ ...newStudent, status: null, attendance: {}, goodDeeds: 0 }); // Add to local data
+        Swal.fire('สำเร็จ', 'เพิ่มข้อมูลนักเรียนใหม่เรียบร้อยแล้ว', 'success');
+        // Clear input fields
+        document.getElementById('new-student-no').value = '';
+        document.getElementById('new-student-id').value = '';
+        document.getElementById('new-student-name').value = '';
+        renderStudentManagementList(); // Refresh the list
+    });
+}
+
+async function editStudent(studentId) {
+    const student = students.find(s => s.id === studentId);
+    if (!student) return;
+
+    const { value: formValues } = await Swal.fire({
+        title: 'แก้ไขข้อมูลนักเรียน',
+        html:
+            `<input id="swal-no" class="swal2-input" placeholder="เลขที่" value="${student.no}">` +
+            `<input id="swal-id" class="swal2-input" placeholder="เลขประจำตัว" value="${student.id}" disabled>` +
+            `<input id="swal-name" class="swal2-input" placeholder="ชื่อ-สกุล" value="${student.name}">`,
+        focusConfirm: false,
+        preConfirm: () => {
+            return [
+                document.getElementById('swal-no').value,
+                document.getElementById('swal-id').value,
+                document.getElementById('swal-name').value
+            ]
+        }
+    });
+
+    if (formValues) {
+        const [newNo, newId, newName] = formValues;
+        if (!newNo || !newName.trim()) {
+            Swal.fire('ข้อผิดพลาด', 'กรุณากรอกข้อมูลให้ครบ', 'error');
+            return;
+        }
+
+        const updatedStudent = {
+            no: parseInt(newNo),
+            id: parseInt(newId),
+            name: newName.trim()
+        };
+        
+        const payload = {
+            action: 'editStudent',
+            data: JSON.stringify(updatedStudent)
+        };
+        sendDataToGoogleSheet(payload, () => {
+            student.no = updatedStudent.no;
+            student.name = updatedStudent.name;
+            Swal.fire('สำเร็จ', 'แก้ไขข้อมูลนักเรียนเรียบร้อยแล้ว', 'success');
+            renderStudentManagementList();
+        });
+    }
+}
+
+
+function deleteStudent(studentId) {
+     const student = students.find(s => s.id === studentId);
+     if (!student) return;
+    
+    Swal.fire({
+        title: 'คุณแน่ใจหรือไม่?',
+        text: `คุณต้องการลบข้อมูลของ ${student.name} ใช่หรือไม่?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'ใช่, ลบเลย!',
+        cancelButtonText: 'ยกเลิก'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const payload = {
+                action: 'deleteStudent',
+                data: JSON.stringify({ id: studentId })
+            };
+            sendDataToGoogleSheet(payload, () => {
+                students = students.filter(s => s.id !== studentId);
+                Swal.fire('ลบแล้ว!', 'ข้อมูลนักเรียนถูกลบออกไปแล้ว', 'success');
+                renderStudentManagementList();
+            });
+        }
+    })
+}
+
+
+// --- GOOGLE SHEETS INTEGRATION (JSONP) ---
+function sendDataToGoogleSheet(payload, callback) {
+    Swal.fire({
+        title: 'กำลังบันทึกข้อมูล...',
+        text: 'กรุณารอสักครู่',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
+    const callbackName = 'gasCallback_' + new Date().getTime();
+    window[callbackName] = function(response) {
+        Swal.close();
+        if (response && response.result === 'success') {
+            if (callback) callback(response);
+        } else {
+            Swal.fire('เกิดข้อผิดพลาด!', (response ? response.message : 'ไม่สามารถบันทึกข้อมูลได้') , 'error');
+            console.error("GAS Error:", response);
+        }
+        // Cleanup
+        try {
+            delete window[callbackName];
+            document.body.removeChild(script);
+        } catch(e) { /* ignore cleanup errors */ }
+    };
+
+    const script = document.createElement('script');
+    const url = GAS_URL + "?callback=" + callbackName + "&payload=" + encodeURIComponent(JSON.stringify(payload));
+    script.src = url;
+    
+    script.onerror = function() {
+        Swal.fire('เกิดข้อผิดพลาด!', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ Google Script ได้ โปรดตรวจสอบ GAS_URL และการตั้งค่า Deploy', 'error');
+        try {
+            delete window[callbackName];
+        } catch(e) { /* ignore cleanup errors */ }
+    };
+
+    document.body.appendChild(script);
+}
+
+// --- UTILITIES ---
+function downloadPNG(elementId, filename) {
+    const element = document.getElementById(elementId);
+    Swal.fire({
+        title: 'กำลังสร้างรูปภาพ...',
+        text: 'กรุณารอสักครู่',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    html2canvas(element, { 
+      useCORS: true,
+      scale: 2 // Increase resolution for better quality
+    }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = filename;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        Swal.close();
+    }).catch(err => {
+        console.error('oops, something went wrong!', err);
+        Swal.fire('ข้อผิดพลาด', 'ไม่สามารถสร้างไฟล์ PNG ได้', 'error');
+    });
+}
+
+function loadAllDataFromSheet() {
+    // Check if the GAS_URL is still a placeholder
+    if (GAS_URL === "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE") {
+        console.warn("GAS_URL is not set. Skipping data load from Google Sheet.");
+        return;
+    }
+
+    Swal.fire({
+        title: 'กำลังโหลดข้อมูล...',
+        text: 'กรุณารอสักครู่',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
+     const payload = { action: 'getAllData' };
+     const callbackName = 'gasCallback_loadData_' + new Date().getTime();
+
+     window[callbackName] = function(response) {
+        Swal.close();
+        if (response && response.result === 'success' && response.data) {
+            // If sheet is empty, use hardcoded list. Otherwise, use sheet data.
+            if(response.data.students && response.data.students.length > 0) {
+                students = response.data.students;
+            }
+            attendanceRecords = response.data.attendanceRecords || {};
+            goodDeedRecords = response.data.goodDeedRecords || [];
+            
+            // Populate status for initial render.
+            students.forEach(s => {
+                s.status = null;
+            });
+            // Initial render after loading data
+            updateUI();
+        } else {
+            Swal.fire({
+                title: 'ไม่พบข้อมูลใน Google Sheet',
+                text: 'กำลังใช้รายชื่อนักเรียนเริ่มต้นจากในโค้ดแทน',
+                icon: 'info',
+                timer: 3000,
+                timerProgressBar: true
+            });
+            console.error("GAS Load Error:", response);
+             // Initial render even if loading fails
+            updateUI();
+        }
+        try {
+            delete window[callbackName];
+            document.body.removeChild(script);
+        } catch(e) { /* ignore cleanup errors */ }
+    };
+
+    const script = document.createElement('script');
+    const url = GAS_URL + "?callback=" + callbackName + "&payload=" + encodeURIComponent(JSON.stringify(payload));
+    script.src = url;
+     script.onerror = function() {
+        Swal.fire('เกิดข้อผิดพลาด!', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ Google Script ได้ โปรดตรวจสอบ GAS_URL และการตั้งค่า Deploy', 'error');
+        updateUI(); // Render with default data
+        try {
+            delete window[callbackName];
+        } catch(e) { /* ignore cleanup errors */ }
+    };
+    document.body.appendChild(script);
+}
+
+// --- INITIALIZATION ---
+window.onload = function() {
+    // Set default dates
+    const today = getTodayDateString();
+    document.getElementById('attendance-date').value = today;
+    document.getElementById('stats-date').value = today;
+    document.getElementById('good-deed-date').value = today;
+    
+    const todayMonth = today.substring(0, 7);
+    document.getElementById('calendar-month').value = todayMonth;
+
+    // Add event listeners for date pickers that trigger re-rendering
+    document.getElementById('stats-date').addEventListener('change', renderStatistics);
+    document.getElementById('calendar-month').addEventListener('change', renderRecordLog);
+    
+    // Render the UI immediately with default data.
+    updateUI();
+    // Then, try to load data from Google Sheets.
+    loadAllDataFromSheet();
+};
+
+</script>
+</body>
+</html>
